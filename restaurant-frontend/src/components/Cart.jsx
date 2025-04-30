@@ -14,7 +14,7 @@ const Cart = ({ items, tableId, onClose, onSubmit }) => {
         <div className="cart-header">
           <h2>Your Order - Table {tableId}</h2>
           <button className="close-button" onClick={onClose}>
-            ×
+            
           </button>
         </div>
 

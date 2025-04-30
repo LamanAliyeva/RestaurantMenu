@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { getMenuByCategory } from "../data/menuData"
 import MenuSection from "../components/MenuSection"
 import Cart from "../components/Cart"
+import "../styles/TableMenu.css"
 
 const TableMenu = () => {
   const { tableId } = useParams()
@@ -15,16 +16,19 @@ const TableMenu = () => {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState(Object.keys(menuCategories)[0] || '');
 
+  // Load menu data
   useEffect(() => {
     setMenuCategories(getMenuByCategory())
   }, [])
 
+  // Load cart data for this table
   useEffect(() => {
     if (tableId) {
       setCartItems(getTableCart(tableId))
     }
   }, [tableId, getTableCart])
 
+  // Validate table ID
   useEffect(() => {
     const tableNum = Number.parseInt(tableId)
     if (isNaN(tableNum) || tableNum < 1 || tableNum > 8) {
@@ -40,8 +44,10 @@ const TableMenu = () => {
       const currentScrollY = window.scrollY;
 
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down & past the initial 100px
         navbar.classList.add('hidden');
       } else {
+        // Scrolling up
         navbar.classList.remove('hidden');
       }
 
@@ -61,6 +67,7 @@ const TableMenu = () => {
     placeOrder(tableId, cartItems)
     setIsCartOpen(false)
 
+    // Show confirmation
     alert("Your order has been placed successfully!")
   }
 
