@@ -1,6 +1,5 @@
 "use client"
 
-import { useOrders } from "../contexts/OrderContext"
 import "../styles/Cart.css"
 
 const Cart = ({ items, tableId, onClose, onSubmit }) => {
@@ -14,7 +13,7 @@ const Cart = ({ items, tableId, onClose, onSubmit }) => {
         <div className="cart-header">
           <h2>Your Order - Table {tableId}</h2>
           <button className="close-button" onClick={onClose}>
-            
+            ×
           </button>
         </div>
 
