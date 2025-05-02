@@ -1,0 +1,158 @@
+"use client"
+
+import { createContext, useContext, useState, useEffect } from "react"
+
+const OrderContext = createContext()
+
+export const useOrders = () => useContext(OrderContext)
+
+export const OrderProvider = ({ children }) => {
+  const [orders, setOrders] = useState(() => {
+    const savedOrders = localStorage.getItem("restaurantOrders")
+    return savedOrders ? JSON.parse(savedOrders) : []
+  })
+
+  const [cart, setCart] = useState(() => {
+    const savedCart = localStorage.getItem("restaurantCart")
+    return savedCart ? JSON.parse(savedCart) : {}
+  })
+
+  // Save orders to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("restaurantOrders", JSON.stringify(orders))
+  }, [orders])
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("restaurantCart", JSON.stringify(cart))
+  }, [cart])
+
+  // Add item to cart for a specific table
+  const addToCart = (tableId, item) => {
+    setCart((prevCart) => {
+      const tableCart = prevCart[tableId] || []
+
+      // Check if item already exists in cart
+      const existingItemIndex = tableCart.findIndex((cartItem) => cartItem.id === item.id)
+
+      if (existingItemIndex >= 0) {
+        // Update quantity if item exists
+        const updatedTableCart = [...tableCart]
+        updatedTableCart[existingItemIndex] = {
+          ...updatedTableCart[existingItemIndex],
+          quantity: updatedTableCart[existingItemIndex].quantity + 1,
+        }
+        return { ...prevCart, [tableId]: updatedTableCart }
+      } else {
+        // Add new item with quantity 1
+        return {
+          ...prevCart,
+          [tableId]: [...tableCart, { ...item, quantity: 1, comment: "" }],
+        }
+      }
+    })
+  }
+
+  useEffect(() => {
+    api.get("/orders/pending")
+      .then(({ data }) => setOrders(data))
+      .catch(console.error)
+  }, [])
+
+  // Remove item from cart
+  const removeFromCart = (tableId, itemId) => {
+    setCart((prevCart) => {
+      const tableCart = prevCart[tableId] || []
+      const updatedTableCart = tableCart.filter((item) => item.id !== itemId)
+      return { ...prevCart, [tableId]: updatedTableCart }
+    })
+  }
+
+  // Update item quantity in cart
+  const updateQuantity = (tableId, itemId, quantity) => {
+    if (quantity < 1) return
+
+    setCart((prevCart) => {
+      const tableCart = prevCart[tableId] || []
+      const updatedTableCart = tableCart.map((item) => (item.id === itemId ? { ...item, quantity } : item))
+      return { ...prevCart, [tableId]: updatedTableCart }
+    })
+  }
+
+  // Update item comment in cart
+  const updateComment = (tableId, itemId, comment) => {
+    setCart((prevCart) => {
+      const tableCart = prevCart[tableId] || []
+      const updatedTableCart = tableCart.map((item) => (item.id === itemId ? { ...item, comment } : item))
+      return { ...prevCart, [tableId]: updatedTableCart }
+    })
+  }
+
+  // Place an order
+  const placeOrder = (tableId, cartItems) => {
+    const newOrder = {
+      id: `order-${Date.now()}`,
+      tableId,
+      items: cartItems,
+      status: "pending", // pending, ready, served, completed
+      createdAt: new Date().toISOString(),
+      readyAt: null,
+      servedAt: null,
+      completedAt: null,
+    }
+
+    setOrders((prevOrders) => [...prevOrders, newOrder])
+
+    // Clear the cart for this table
+    setCart((prevCart) => ({ ...prevCart, [tableId]: [] }))
+
+    return newOrder
+  }
+
+  // Update order status
+  const updateOrderStatus = (orderId, status) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((order) => {
+        if (order.id !== orderId) return order
+
+        const updatedOrder = { ...order, status }
+
+        // Add timestamps based on status
+        if (status === "ready" && !order.readyAt) {
+          updatedOrder.readyAt = new Date().toISOString()
+        } else if (status === "served" && !order.servedAt) {
+          updatedOrder.servedAt = new Date().toISOString()
+        } else if (status === "completed" && !order.completedAt) {
+          updatedOrder.completedAt = new Date().toISOString()
+        }
+
+        return updatedOrder
+      }),
+    )
+  }
+
+  // Get cart for a specific table
+  const getTableCart = (tableId) => {
+    return cart[tableId] || []
+  }
+
+  // Get orders filtered by status
+  const getFilteredOrders = (status) => {
+    if (!status) return orders
+    return orders.filter((order) => order.status === status)
+  }
+
+  const value = {
+    orders,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    updateComment,
+    placeOrder,
+    updateOrderStatus,
+    getTableCart,
+    getFilteredOrders,
+  }
+
+  return <OrderContext.Provider value={value}>{children}</OrderContext.Provider>
+}
