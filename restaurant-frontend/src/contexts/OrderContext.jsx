@@ -17,26 +17,21 @@ export const OrderProvider = ({ children }) => {
     return savedCart ? JSON.parse(savedCart) : {}
   })
 
-  // Save orders to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("restaurantOrders", JSON.stringify(orders))
   }, [orders])
 
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("restaurantCart", JSON.stringify(cart))
   }, [cart])
 
-  // Add item to cart for a specific table
   const addToCart = (tableId, item) => {
     setCart((prevCart) => {
       const tableCart = prevCart[tableId] || []
 
-      // Check if item already exists in cart
       const existingItemIndex = tableCart.findIndex((cartItem) => cartItem.id === item.id)
 
       if (existingItemIndex >= 0) {
-        // Update quantity if item exists
         const updatedTableCart = [...tableCart]
         updatedTableCart[existingItemIndex] = {
           ...updatedTableCart[existingItemIndex],
@@ -44,7 +39,6 @@ export const OrderProvider = ({ children }) => {
         }
         return { ...prevCart, [tableId]: updatedTableCart }
       } else {
-        // Add new item with quantity 1
         return {
           ...prevCart,
           [tableId]: [...tableCart, { ...item, quantity: 1, comment: "" }],
@@ -59,7 +53,6 @@ export const OrderProvider = ({ children }) => {
       .catch(console.error)
   }, [])
 
-  // Remove item from cart
   const removeFromCart = (tableId, itemId) => {
     setCart((prevCart) => {
       const tableCart = prevCart[tableId] || []
@@ -68,7 +61,6 @@ export const OrderProvider = ({ children }) => {
     })
   }
 
-  // Update item quantity in cart
   const updateQuantity = (tableId, itemId, quantity) => {
     if (quantity < 1) return
 
@@ -79,7 +71,6 @@ export const OrderProvider = ({ children }) => {
     })
   }
 
-  // Update item comment in cart
   const updateComment = (tableId, itemId, comment) => {
     setCart((prevCart) => {
       const tableCart = prevCart[tableId] || []
@@ -88,7 +79,6 @@ export const OrderProvider = ({ children }) => {
     })
   }
 
-  // Place an order
   const placeOrder = (tableId, cartItems) => {
     const newOrder = {
       id: `order-${Date.now()}`,
@@ -103,13 +93,11 @@ export const OrderProvider = ({ children }) => {
 
     setOrders((prevOrders) => [...prevOrders, newOrder])
 
-    // Clear the cart for this table
     setCart((prevCart) => ({ ...prevCart, [tableId]: [] }))
 
     return newOrder
   }
 
-  // Update order status
   const updateOrderStatus = (orderId, status) => {
     setOrders((prevOrders) =>
       prevOrders.map((order) => {
@@ -117,7 +105,6 @@ export const OrderProvider = ({ children }) => {
 
         const updatedOrder = { ...order, status }
 
-        // Add timestamps based on status
         if (status === "ready" && !order.readyAt) {
           updatedOrder.readyAt = new Date().toISOString()
         } else if (status === "served" && !order.servedAt) {
@@ -131,12 +118,10 @@ export const OrderProvider = ({ children }) => {
     )
   }
 
-  // Get cart for a specific table
   const getTableCart = (tableId) => {
     return cart[tableId] || []
   }
 
-  // Get orders filtered by status
   const getFilteredOrders = (status) => {
     if (!status) return orders
     return orders.filter((order) => order.status === status)

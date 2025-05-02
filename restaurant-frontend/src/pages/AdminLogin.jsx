@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "../contexts/AuthContext"
 import "../styles/AdminLogin.css"
 
 const AdminLogin = () => {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState("manager")
+  const [role, setRole] = useState("kitchen")
   const [error, setError] = useState("")
 
   const { login } = useAuth()
@@ -54,7 +55,7 @@ const AdminLogin = () => {
               required
             />
           </div>
-{/* 
+
           <div className="form-group">
             <label htmlFor="role">Role</label>
             <select id="role" value={role} onChange={(e) => setRole(e.target.value)}>
@@ -62,7 +63,7 @@ const AdminLogin = () => {
               <option value="waiter">Waiter</option>
               <option value="manager">Manager</option>
             </select>
-          </div> */}
+          </div>
 
           <button type="submit" className="login-button">
             Login

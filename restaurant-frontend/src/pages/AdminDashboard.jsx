@@ -1,6 +1,9 @@
 
 import { useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { useAuth } from "../contexts/AuthContext"
+import KitchenDashboard from "../components/KitchenDashboard"
+import WaiterDashboard from "../components/WaiterDashboard"
 import ManagerDashboard from "../components/ManagerDashboard"
 import "../styles/AdminDashboard.css"
 
@@ -9,17 +12,31 @@ const AdminDashboard = () => {
   const { currentUser, logout } = useAuth()
   const navigate = useNavigate()
 
+  // Redirect if not logged in
   useEffect(() => {
     if (!currentUser) {
       navigate("/admin/login")
     } else if (currentUser.role !== role) {
+      // If user tries to access a different role's dashboard
       navigate(`/admin/${currentUser.role}`)
     }
   }, [currentUser, role, navigate])
 
+  // Validate role
+  useEffect(() => {
+    const validRoles = ["kitchen", "waiter", "manager"]
+    if (!validRoles.includes(role)) {
+      navigate("/admin/login")
+    }
+  }, [role, navigate])
+
   const handleLogout = () => {
     logout()
     navigate("/admin/login")
+  }
+
+  const handleRoleChange = (newRole) => {
+    navigate(`/admin/${newRole}`)
   }
 
   if (!currentUser) return null
@@ -30,7 +47,9 @@ const AdminDashboard = () => {
         <h1>Restaurant Admin</h1>
 
         <div className="user-controls">
-          
+          <div className="role-selector">
+
+          </div>
 
           <div className="user-info">
             <span>Logged in as: {currentUser.username}</span>
@@ -42,7 +61,9 @@ const AdminDashboard = () => {
       </header>
 
       <main className="dashboard-content">
-        <ManagerDashboard />
+        {role === "kitchen" && <KitchenDashboard />}
+        {role === "waiter" && <WaiterDashboard />}
+        {role === "manager" && <ManagerDashboard />}
       </main>
     </div>
   )

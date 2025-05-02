@@ -1,5 +1,6 @@
 "use client"
 
+import { useOrders } from "../contexts/OrderContext"
 import "../styles/Cart.css"
 
 const Cart = ({ items, tableId, onClose, onSubmit }) => {
