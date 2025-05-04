@@ -1,0 +1,186 @@
+.waiter-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.waiter-dashboard h2 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 16px;
+  font-weight: 700;
+  position: relative;
+  display: inline-block;
+}
+
+.waiter-dashboard h2::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  border-radius: 3px;
+}
+
+.dashboard-header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.no-orders {
+  background-color: white;
+  border-radius: 12px;
+  padding: 60px 30px;
+  text-align: center;
+  color: #666;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.no-orders::before {
+  content: "🍽️";
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.no-orders p {
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+}
+
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.waiter-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.waiter-stat {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.waiter-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #2196f3, #1976d2);
+}
+
+.waiter-stat:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.waiter-stat-title {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.waiter-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2196f3;
+}
+
+.table-filter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  background-color: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.table-filter-button {
+  padding: 8px 16px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.table-filter-button:hover,
+.table-filter-button.active {
+  background-color: #2196f3;
+  color: white;
+  border-color: #2196f3;
+  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
+}
+
+.waiter-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.waiter-action-button {
+  padding: 10px 16px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.waiter-action-button:hover {
+  background-color: #f5f5f5;
+  border-color: #ccc;
+}
+
+.waiter-action-button.active {
+  background-color: #2196f3;
+  color: white;
+  border-color: #2196f3;
+}
+
+@media (max-width: 768px) {
+  .orders-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .waiter-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .table-filter {
+    overflow-x: auto;
+    padding-bottom: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .table-filter-button {
+    white-space: nowrap;
+  }
+
+  .waiter-actions {
+    flex-wrap: wrap;
+  }
+}

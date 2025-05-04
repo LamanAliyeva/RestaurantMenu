@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { useOrders } from "../contexts/OrderContext"
 import { getMenuByCategory } from "../data/menuData"
 import MenuSection from "../components/MenuSection"
 import Cart from "../components/Cart"
