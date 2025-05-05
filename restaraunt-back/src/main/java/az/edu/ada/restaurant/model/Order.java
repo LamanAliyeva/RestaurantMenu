@@ -21,10 +21,9 @@ public class Order {
     private Integer tableNumber;    // ← new field
 
 
-
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<Dish> items = new ArrayList<>();
+    private List<OrderItem> items = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -33,6 +32,27 @@ public class Order {
     @JoinColumn(name="waiter_id", nullable = true)
     private User waiter;
 
+    // Order.java (add these fields)
+    private Instant readyAt;
+    private Instant servedAt;
+    private Instant completedAt;
+// + public getters/setters
 
 
+    @Column(nullable=false, updatable=false, unique=true)
+    private String trackingCode;
+
+    @PrePersist
+    public void prePersist() {
+        this.trackingCode = UUID.randomUUID().toString();
+        this.createdAt    = Instant.now();
+    }
+
+    public void setItems(List<OrderItem> items) {   // <-- accept OrderItem now
+        this.items = items;
+        // ensure each child points back to this parent
+        for (OrderItem it : items) {
+            it.setOrder(this);
+        }
+    }
 }
