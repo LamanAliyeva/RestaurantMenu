@@ -1,6 +1,7 @@
 package az.edu.ada.restaurant.service.impl;
 
 import az.edu.ada.restaurant.model.Order;
+import az.edu.ada.restaurant.model.OrderStatus;
 import az.edu.ada.restaurant.service.OrderService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,16 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Optional<Order> findById(Long id) {
         return Optional.empty();
+    }
+
+    @Override
+    public Order updateStatus(Long orderId, OrderStatus status) {
+        return null;
+    }
+
+    @Override
+    public List<Order> findByStatus(OrderStatus status) {
+        return null;
     }
 
     @Override
