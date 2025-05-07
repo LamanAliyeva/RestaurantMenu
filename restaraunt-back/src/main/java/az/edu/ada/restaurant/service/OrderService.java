@@ -13,6 +13,8 @@ public interface OrderService {
     List<Order> findAll();
     Optional<Order> findById(Long id);
 
+    @Cacheable(cacheNames="orderTracking", key="#orderId")
+    Optional<OrderTrackingDto> getTrackingDto(Long orderId);
 
     Order updateStatus(Long orderId, OrderStatus status);
     List<Order> findByStatus(OrderStatus status);

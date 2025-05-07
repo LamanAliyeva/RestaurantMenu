@@ -20,6 +20,9 @@ public class Order {
     @Column(nullable = false)
     private Integer tableNumber;    // ← new field
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable=false)
+    private OrderStatus status;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
