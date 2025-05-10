@@ -1,6 +1,5 @@
 package az.edu.ada.restaurant.config;
 
-import az.edu.ada.restaurant.security.JwtAuthenticationFilter;
 import az.edu.ada.restaurant.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,8 +21,20 @@ public class SecurityConfig {
     }
 
     @Bean
+    public DaoAuthenticationProvider authenticationProvider(
+            CustomUserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder
+    ) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(
-            HttpSecurity http
+            HttpSecurity http,
+            DaoAuthenticationProvider authProvider
     ) throws Exception {
         http
                 .csrf().disable()
@@ -38,9 +49,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/orders/*/status").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/orders/track/*").permitAll()  // allow tracking
 
+                        // Chef/Waiter/Manager/Admin can view and update orders
+                        .requestMatchers(HttpMethod.GET, "/api/orders").hasAnyRole("CHEF","WAITER","MANAGER","ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasAnyRole("CHEF","WAITER","MANAGER","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/orders/*").hasRole("ADMIN")
+
+                        // Admin: full access to any other endpoints
+                        .anyRequest().hasRole("ADMIN")
                 )
-                .authenticationProvider()
-                .addFilterBefore(UsernamePasswordAuthenticationFilter.class);
+                .authenticationProvider(authProvider)
+                .addFilterBefore(null, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
