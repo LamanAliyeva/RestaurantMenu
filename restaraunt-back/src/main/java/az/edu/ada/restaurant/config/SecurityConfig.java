@@ -1,5 +1,6 @@
 package az.edu.ada.restaurant.config;
 
+import az.edu.ada.restaurant.security.JwtAuthenticationFilter;
 import az.edu.ada.restaurant.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,6 +35,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
+            JwtAuthenticationFilter jwtFilter,
             DaoAuthenticationProvider authProvider
     ) throws Exception {
         http
@@ -58,7 +60,7 @@ public class SecurityConfig {
                         .anyRequest().hasRole("ADMIN")
                 )
                 .authenticationProvider(authProvider)
-                .addFilterBefore(null, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

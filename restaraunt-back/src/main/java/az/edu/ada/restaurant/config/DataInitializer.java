@@ -28,6 +28,19 @@ public class DataInitializer {
             Role chefRole    = rr.findByName("CHEF").get();
             Role managerRole = rr.findByName("MANAGER").get();
 
+            // 3) Ensure each user exists
+            if (!ur.existsByUsername("admin")) {
+                ur.save(new User(null, "admin", pe.encode("pass"), Set.of(adminRole)));
+            }
+            if (!ur.existsByUsername("w")) {
+                ur.save(new User(null, "w", pe.encode("pass"), Set.of(waiterRole)));
+            }
+            if (!ur.existsByUsername("chef")) {
+                ur.save(new User(null, "chef", pe.encode("pass"), Set.of(chefRole)));
+            }
+            if (!ur.existsByUsername("mgr")) {
+                ur.save(new User(null, "mgr", pe.encode("pass"), Set.of(managerRole)));
+            }
 
             if (rr.count() == 0) {
                 rr.save(Role.builder()
@@ -50,9 +63,9 @@ public class DataInitializer {
                 Role chef   = rr.findByName("CHEF").get();
 
                 ur.save(new User(null,"admin",pe.encode("pass"), Set.of(admin)));
-                ur.save(new User(null,"manager",pe.encode("pass"), Set.of(manager)));
-                ur.save(new User(null,"waiter",pe.encode("pass"),Set.of(waiter)));
-                ur.save(new User(null,"kitchen",pe.encode("pass"),Set.of(chef)));
+                ur.save(new User(null,"mgr",pe.encode("pass"), Set.of(manager)));
+                ur.save(new User(null,"w",pe.encode("pass"),Set.of(waiter)));
+                ur.save(new User(null,"chef",pe.encode("pass"),Set.of(chef)));
             }
 
 

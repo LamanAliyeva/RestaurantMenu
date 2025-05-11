@@ -4,9 +4,8 @@ import az.edu.ada.restaurant.model.User;
 import az.edu.ada.restaurant.repository.UserRepository;
 import az.edu.ada.restaurant.security.JwtUtil;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.http.*;
+import org.springframework.security.authentication.*;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -19,17 +18,20 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthenticationConfiguration authConfig;
+    private final JwtUtil jwtUtil;
     private final RedisTemplate<String,Object> redis;
     private final UserRepository users;
     private final PasswordEncoder encoder;
 
     public AuthController(
             AuthenticationConfiguration authConfig,
+            JwtUtil jwtUtil,
             RedisTemplate<String,Object> redis,
             UserRepository users,
             PasswordEncoder encoder
     ) {
         this.authConfig = authConfig;
+        this.jwtUtil    = jwtUtil;
         this.redis      = redis;
         this.users      = users;
         this.encoder    = encoder;
@@ -47,10 +49,15 @@ public class AuthController {
         );
 
         User u = users.findByUsername(username).get();
+        String token = jwtUtil.generateToken(username);
 
+        // whitelist token with same TTL as JWT
+        redis.opsForSet().add("jwt:whitelist", token);
+        redis.expire("jwt:whitelist", Duration.ofMillis(jwtUtil.getExpirationMs()));
 
         // return token + user info
         return ResponseEntity.ok(Map.of(
+                "token", token,
                 "user", Map.of(
                         "username", u.getUsername(),
                         "role", u.getRoles().iterator().next().getName().toLowerCase()
@@ -68,7 +75,7 @@ public class AuthController {
             redis.opsForSet().remove("jwt:whitelist", token);
             // add to blacklist so it cannot be used if someone re-issues
             redis.opsForSet().add("jwt:blacklist", token);
-            redis.expire("jwt:blacklist", Duration.ofMillis(null));
+            redis.expire("jwt:blacklist", Duration.ofMillis(jwtUtil.getExpirationMs()));
         }
         return ResponseEntity.noContent().build();
     }
