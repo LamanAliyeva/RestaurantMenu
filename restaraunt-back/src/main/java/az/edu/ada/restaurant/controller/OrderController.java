@@ -1,5 +1,6 @@
 package az.edu.ada.restaurant.controller;
 
+import az.edu.ada.restaurant.dto.OrderTrackingDto;
 import az.edu.ada.restaurant.model.*;
 import az.edu.ada.restaurant.repository.DishRepository;
 import az.edu.ada.restaurant.repository.UserRepository;
@@ -7,9 +8,13 @@ import az.edu.ada.restaurant.service.OrderService;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,8 +56,20 @@ public class OrderController {
         @SuppressWarnings("unchecked")
         List<Map<String,Object>> itemsData = (List<Map<String,Object>>) body.get("items");
 
+        // 3) Build Order entity
+        Order order = new Order();
+        order.setTableNumber(tableNum);
+        order.setStatus(OrderStatus.PENDING);
 
         // ← set the currently authenticated waiter
+        List<User> waiters = userRepo.findByRolesName("WAITER");
+        if (waiters.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "No waiters available to assign");
+        }
+        Random rnd = new Random();
+        User randomWaiter = waiters.get(rnd.nextInt(waiters.size()));
+        order.setWaiter(randomWaiter);
 
         // 4) Map each payload entry to an OrderItem
         List<OrderItem> orderItems = itemsData.stream().map(itemMap -> {
@@ -74,7 +91,7 @@ public class OrderController {
 
             // create item
             OrderItem oi = new OrderItem();
-            oi.setOrder(null);
+            oi.setOrder(order);
             oi.setDish(dish);
             oi.setQuantity(qty);
             oi.setPrice(dish.getPrice());
@@ -88,24 +105,16 @@ public class OrderController {
             return oi;
         }).collect(Collectors.toList());
 
-
+        // 5) Attach and save
+        order.setItems(orderItems);
+        Order saved = orderService.createOrder(order);
 
         Map<String,Object> resp = new HashMap<>();
+        resp.put("order", saved);
+        // use the DB ID as the tracking code
+        resp.put("trackCode", saved.getId().toString());
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
 
-    }
-
-
-    @PutMapping("/{id}/status")
-    public ResponseEntity<Order> updateOrderStatus(
-            @PathVariable Long id,
-            @RequestBody Map<String,String> body
-    ) {
-        // Map the incoming JSON string (e.g. "in_prep") back to the enum
-        String raw = body.get("status");
-        OrderStatus s = OrderStatus.valueOf(raw.toUpperCase());
-        Order updated = orderService.updateStatus(id, s);
-        return ResponseEntity.ok(updated);
     }
 
     @GetMapping
@@ -120,6 +129,20 @@ public class OrderController {
                 .collect(Collectors.joining(",")));
         return result;
     }
+
+    @GetMapping("/pending")
+    public List<Order> getPendingOrders() {
+        return orderService.findByStatus(OrderStatus.PENDING);
+    }
+
+    @GetMapping("/track/{code}")
+    public ResponseEntity<OrderTrackingDto> trackOrder(@PathVariable String code) {
+        Long orderId = Long.parseLong(code);
+        OrderTrackingDto dto = orderService.getTrackingDto(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return ResponseEntity.ok(dto);
+    }
+
 
 
 }
