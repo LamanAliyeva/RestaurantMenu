@@ -117,6 +117,19 @@ public class OrderController {
 
     }
 
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Order> updateOrderStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String,String> body
+    ) {
+        // Map the incoming JSON string (e.g. "in_prep") back to the enum
+        String raw = body.get("status");
+        OrderStatus s = OrderStatus.valueOf(raw.toUpperCase());
+        Order updated = orderService.updateStatus(id, s);
+        return ResponseEntity.ok(updated);
+    }
+
     @GetMapping
     public List<Order> getOrders(@RequestParam(value="status", required=false) String status) {
         List<Order> result = (status != null)
