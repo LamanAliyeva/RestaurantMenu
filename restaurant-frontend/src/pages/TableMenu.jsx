@@ -1,9 +1,9 @@
 "use client"
 
+import api from "../api"
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useOrders } from "../contexts/OrderContext"
-import { getMenuByCategory } from "../data/menuData"
 import MenuSection from "../components/MenuSection"
 import Cart from "../components/Cart"
 import "../styles/TableMenu.css"
@@ -15,12 +15,23 @@ const TableMenu = () => {
   const [menuCategories, setMenuCategories] = useState({})
   const [cartItems, setCartItems] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
-  const [activeCategory, setActiveCategory] = useState(Object.keys(menuCategories)[0] || '');
+  const [activeCategory, setActiveCategory] = useState(Object.keys(menuCategories)[0] || '')
 
-  // Load menu data
+
   useEffect(() => {
-    setMenuCategories(getMenuByCategory())
+    // fetch real menu from backend
+    api.get("/categories")
+      .then(({ data }) => {
+        console.log("📦 categories from server:", data)      // ← add this
+        const byCat = {}
+        data.forEach(cat => (byCat[cat.name] = cat.dishes))
+        setMenuCategories(byCat)
+      })
+      .catch(err => {
+        console.error("Error fetching categories:", err)
+      })
   }, [])
+
 
   // Load cart data for this table
   useEffect(() => {
@@ -63,13 +74,20 @@ const TableMenu = () => {
   }, []);
 
   const handleSubmitOrder = () => {
-    if (cartItems.length === 0) return
+    ; (async () => {
+      const items = getTableCart(tableId)
+      if (items.length === 0) return
 
-    placeOrder(tableId, cartItems)
-    setIsCartOpen(false)
-
-    // Show confirmation
-    alert("Your order has been placed successfully!")
+      try {
+        const code = await placeOrder(tableId, items)
+        setIsCartOpen(false)
+        // redirect to /track/:code
+        navigate(`/track/${code}`)
+      } catch (err) {
+        console.error("Order placement failed:", err)
+        alert("Could not place your order.")
+      }
+    })()
   }
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -101,7 +119,7 @@ const TableMenu = () => {
         </nav>
 
         <button className="cart-button" onClick={() => setIsCartOpen(true)}>
-          Cart ({totalItems})
+          Cart ({getTableCart(tableId).reduce((s, i) => s + i.quantity, 0)})
         </button>
       </header>
 
@@ -112,7 +130,12 @@ const TableMenu = () => {
       </main>
 
       {isCartOpen && (
-        <Cart items={cartItems} tableId={tableId} onClose={() => setIsCartOpen(false)} onSubmit={handleSubmitOrder} />
+        <Cart
+          items={getTableCart(tableId)}        // always fresh array
+          tableId={tableId}
+          onClose={() => setIsCartOpen(false)}
+          onSubmit={handleSubmitOrder}
+        />
       )}
     </div>
   )
