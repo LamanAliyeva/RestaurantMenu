@@ -1,146 +1,83 @@
 "use client"
 
+import api from "../api"
 import { createContext, useContext, useState, useEffect } from "react"
 
 const OrderContext = createContext()
-
 export const useOrders = () => useContext(OrderContext)
 
 export const OrderProvider = ({ children }) => {
-  const [orders, setOrders] = useState(() => {
-    const savedOrders = localStorage.getItem("restaurantOrders")
-    return savedOrders ? JSON.parse(savedOrders) : []
-  })
+  // 1) Orders come from the backend (no localStorage for orders)
+  const [orders, setOrders] = useState([])
 
+  // 2) Cart can still be persisted locally if you like
   const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem("restaurantCart")
-    return savedCart ? JSON.parse(savedCart) : {}
+    const saved = localStorage.getItem("restaurantCart")
+    return saved ? JSON.parse(saved) : {}
   })
 
-  // Save orders to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("restaurantOrders", JSON.stringify(orders))
-  }, [orders])
+  // 3) Load existing orders once on mount
 
-  // Save cart to localStorage whenever it changes
+
+  // 4) Persist cart to localStorage (optional)
   useEffect(() => {
     localStorage.setItem("restaurantCart", JSON.stringify(cart))
   }, [cart])
 
-  // Add item to cart for a specific table
+  // 5) Cart helpers
   const addToCart = (tableId, item) => {
-    setCart((prevCart) => {
-      const tableCart = prevCart[tableId] || []
-
-      // Check if item already exists in cart
-      const existingItemIndex = tableCart.findIndex((cartItem) => cartItem.id === item.id)
-
-      if (existingItemIndex >= 0) {
-        // Update quantity if item exists
-        const updatedTableCart = [...tableCart]
-        updatedTableCart[existingItemIndex] = {
-          ...updatedTableCart[existingItemIndex],
-          quantity: updatedTableCart[existingItemIndex].quantity + 1,
-        }
-        return { ...prevCart, [tableId]: updatedTableCart }
-      } else {
-        // Add new item with quantity 1
-        return {
-          ...prevCart,
-          [tableId]: [...tableCart, { ...item, quantity: 1, comment: "" }],
-        }
+    setCart(prev => {
+      const tbl = prev[tableId] || []
+      const idx = tbl.findIndex(i => i.id === item.id)
+      if (idx >= 0) {
+        const updated = [...tbl]
+        updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + 1 }
+        return { ...prev, [tableId]: updated }
       }
+      return { ...prev, [tableId]: [...tbl, { ...item, quantity: 1, comment: "" }] }
     })
   }
 
-  useEffect(() => {
-    api.get("/orders/pending")
-      .then(({ data }) => setOrders(data))
-      .catch(console.error)
-  }, [])
-
-  // Remove item from cart
   const removeFromCart = (tableId, itemId) => {
-    setCart((prevCart) => {
-      const tableCart = prevCart[tableId] || []
-      const updatedTableCart = tableCart.filter((item) => item.id !== itemId)
-      return { ...prevCart, [tableId]: updatedTableCart }
-    })
+    setCart(prev => ({
+      ...prev,
+      [tableId]: (prev[tableId] || []).filter(i => i.id !== itemId)
+    }))
   }
 
-  // Update item quantity in cart
-  const updateQuantity = (tableId, itemId, quantity) => {
-    if (quantity < 1) return
-
-    setCart((prevCart) => {
-      const tableCart = prevCart[tableId] || []
-      const updatedTableCart = tableCart.map((item) => (item.id === itemId ? { ...item, quantity } : item))
-      return { ...prevCart, [tableId]: updatedTableCart }
-    })
+  const updateQuantity = (tableId, itemId, qty) => {
+    if (qty < 1) return
+    setCart(prev => ({
+      ...prev,
+      [tableId]: prev[tableId].map(i => i.id === itemId ? { ...i, quantity: qty } : i)
+    }))
   }
 
-  // Update item comment in cart
   const updateComment = (tableId, itemId, comment) => {
-    setCart((prevCart) => {
-      const tableCart = prevCart[tableId] || []
-      const updatedTableCart = tableCart.map((item) => (item.id === itemId ? { ...item, comment } : item))
-      return { ...prevCart, [tableId]: updatedTableCart }
-    })
+    setCart(prev => ({
+      ...prev,
+      [tableId]: prev[tableId].map(i => i.id === itemId ? { ...i, comment } : i)
+    }))
   }
 
-  // Place an order
-  const placeOrder = (tableId, cartItems) => {
-    const newOrder = {
-      id: `order-${Date.now()}`,
-      tableId,
-      items: cartItems,
-      status: "pending", // pending, ready, served, completed
-      createdAt: new Date().toISOString(),
-      readyAt: null,
-      servedAt: null,
-      completedAt: null,
-    }
+  // 6) placeOrder → POST /api/orders
+  const placeOrder = async (tableId, items) => {
+    const { data } = await api.post("/orders", { tableId, items });
+    setOrders(prev => [...prev, data.order]);
+    setCart(prev => ({ ...prev, [tableId]: [] }));
+    return data.trackCode;   // <-- now returns just the code
+  };
 
-    setOrders((prevOrders) => [...prevOrders, newOrder])
-
-    // Clear the cart for this table
-    setCart((prevCart) => ({ ...prevCart, [tableId]: [] }))
-
-    return newOrder
+  // 7) updateOrderStatus → PUT /api/orders/{id}/status
+  const updateOrderStatus = async (orderId, status) => {
+    const { data } = await api.put(`/orders/${orderId}/status`, { status })
+    setOrders(prev => prev.map(o => o.id === data.id ? data : o))
+    return data
   }
 
-  // Update order status
-  const updateOrderStatus = (orderId, status) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) => {
-        if (order.id !== orderId) return order
-
-        const updatedOrder = { ...order, status }
-
-        // Add timestamps based on status
-        if (status === "ready" && !order.readyAt) {
-          updatedOrder.readyAt = new Date().toISOString()
-        } else if (status === "served" && !order.servedAt) {
-          updatedOrder.servedAt = new Date().toISOString()
-        } else if (status === "completed" && !order.completedAt) {
-          updatedOrder.completedAt = new Date().toISOString()
-        }
-
-        return updatedOrder
-      }),
-    )
-  }
-
-  // Get cart for a specific table
-  const getTableCart = (tableId) => {
-    return cart[tableId] || []
-  }
-
-  // Get orders filtered by status
-  const getFilteredOrders = (status) => {
-    if (!status) return orders
-    return orders.filter((order) => order.status === status)
-  }
+  // 8) Helpers for components
+  const getTableCart = tableId => cart[tableId] || []
+  const getFilteredOrders = status => status ? orders.filter(o => o.status === status) : orders
 
   const value = {
     orders,

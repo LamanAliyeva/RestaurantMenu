@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 import "../styles/AdminLogin.css"
@@ -8,27 +8,40 @@ import "../styles/AdminLogin.css"
 const AdminLogin = () => {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState("kitchen")
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const { login } = useAuth()
+  const { login, currentUser } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (currentUser) {
+      navigate(`/admin/${currentUser.role}`)
+    }
+  }, [currentUser, navigate])
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
+    setLoading(true)
+
 
     if (!username || !password) {
       setError("Please enter both username and password")
+      setLoading(false)
       return
     }
 
-    const success = login(username, password, role)
-
-    if (success) {
-      navigate(`/admin/${role}`)
-    } else {
-      setError("Invalid credentials")
+    try {
+      const success = await login(username, password)
+      if (!success) {
+        setError("Invalid credentials")
+      }
+    } catch (err) {
+      console.error("Login error:", err)
+      setError("Something went wrong. Please try again.")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -56,17 +69,8 @@ const AdminLogin = () => {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="role">Role</label>
-            <select id="role" value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="kitchen">Kitchen</option>
-              <option value="waiter">Waiter</option>
-              <option value="manager">Manager</option>
-            </select>
-          </div>
-
-          <button type="submit" className="login-button">
-            Login
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? "Logging in…" : "Login"}
           </button>
         </form>
       </div>

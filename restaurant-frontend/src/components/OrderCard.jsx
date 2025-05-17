@@ -37,7 +37,7 @@ const OrderCard = ({
   return (
     <div className={`order-card ${getStatusClass(order.status)}`}>
       <div className="order-header">
-        <h3>Order #{order.id.split("-")[1]}</h3>
+        <h3>Order #{order.id}</h3>
         {showTable && <span className="table-number">Table {order.tableId}</span>}
         {showStatus && (
           <span className={`order-status ${getStatusClass(order.status)}`}>
@@ -82,21 +82,21 @@ const OrderCard = ({
           {order.items.map((item, index) => (
             <li key={index}>
               <div className="item-details">
-                <span className="item-quantity">{item.quantity}x</span>
-                <span className="item-name">{item.name}</span>
-                <span className="item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                <span className="item-quantity">{item.quantity}</span>
+                <span className="item-name">{item.dish.name}</span>
+                <span className="item-price">₼{(item.price * item.quantity).toFixed(2)}</span>
+                {showComments && item.comment && (
+                  <div className="item-comment">“{item.comment}”</div>
+                )}
+                {/* {console.log("Rendering item:", item)} */}
               </div>
 
-              {showComments && item.comment && (
-                <div className="item-comment">
-                  <span className="comment-label">Note:</span>
-                  <span className="comment-text">{item.comment}</span>
-                </div>
-              )}
             </li>
           ))}
         </ul>
       </div>
+
+
 
       {actionLabel && onAction && (
         <button className="action-button" onClick={onAction}>

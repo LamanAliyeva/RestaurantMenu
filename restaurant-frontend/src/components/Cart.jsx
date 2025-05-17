@@ -29,7 +29,7 @@ const Cart = ({ items, tableId, onClose, onSubmit }) => {
                 <div key={item.id} className="cart-item">
                   <div className="item-info">
                     <h3>{item.name}</h3>
-                    <p className="item-price">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="item-price">₼{(item.price * item.quantity).toFixed(2)}</p>
                   </div>
 
                   <div className="item-actions">
@@ -63,7 +63,7 @@ const Cart = ({ items, tableId, onClose, onSubmit }) => {
             <div className="cart-footer">
               <div className="cart-total">
                 <span>Total:</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>₼{totalPrice.toFixed(2)}</span>
               </div>
 
               <button className="place-order-button" onClick={onSubmit}>

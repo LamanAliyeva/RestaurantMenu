@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from "react"
+import api from '../api'
 
 const AuthContext = createContext()
 
@@ -8,31 +9,39 @@ export const useAuth = () => useContext(AuthContext)
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(() => {
-    const savedUser = localStorage.getItem("restaurantUser")
-    return savedUser ? JSON.parse(savedUser) : null
+    const saved = localStorage.getItem("restaurantUser")
+    return saved ? JSON.parse(saved) : null
   })
 
   useEffect(() => {
     if (currentUser) {
+      // Persist user + token
       localStorage.setItem("restaurantUser", JSON.stringify(currentUser))
+      // Add Authorization header for all future API calls
+      api.defaults.headers.common["Authorization"] = `Bearer ${currentUser.token}`
     } else {
       localStorage.removeItem("restaurantUser")
+      // Remove header when logged out
+      delete api.defaults.headers.common["Authorization"]
     }
   }, [currentUser])
 
-  // Mock login function
-  const login = (username, password, role) => {
-    // In a real app, you would validate credentials against a backend
-    // For this demo, we'll accept any non-empty username/password
-    if (username && password) {
-      const user = { username, role }
-      setCurrentUser(user)
-      return true
+  const login = async (username, password) => {
+    try {
+      const { data } = await api.post("/auth/login", { username, password })
+      // data: { token, user: { username, role, … } }
+      setCurrentUser({ ...data.user, token: data.token })
+      return data.user.role;
+    } catch (e) {
+      console.error("Login failed", e)
+      return null
     }
-    return false
   }
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout")
+    } catch (_) { /* ignore errors */ }
     setCurrentUser(null)
   }
 
