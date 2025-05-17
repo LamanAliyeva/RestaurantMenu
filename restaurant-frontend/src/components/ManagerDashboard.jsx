@@ -1,63 +1,57 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useOrders } from "../contexts/OrderContext"
+import api from "../api"
 import OrderCard from "./OrderCard"
 import "../styles/ManagerDashboard.css"
 
-const ManagerDashboard = () => {
-  const { orders, updateOrderStatus } = useOrders()
-  const [filteredOrders, setFilteredOrders] = useState([])
-  const [statusFilter, setStatusFilter] = useState("all")
+export default function ManagerDashboard() {
+  const [orders, setOrders] = useState([])
+  const [error, setError] = useState("")
 
+  // Load all orders for manager
   useEffect(() => {
-    let filtered = [...orders]
+    api.get("/orders")
+      .then(({ data }) => {
+        // Filter out completed orders
+        const activeOrders = data.filter(order => order.status !== "completed")
+        setOrders(activeOrders)
+      })
+      .catch(err => {
+        console.error("Failed to load orders:", err)
+        setError("Could not load orders.")
+      })
+  }, [])
 
-    // Apply status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((order) => order.status === statusFilter)
+  const handleComplete = async (orderId) => {
+    try {
+      await api.put(`/orders/${orderId}/status`, { status: "completed" })
+      setOrders(orders.filter(o => o.id !== orderId))
+    } catch (err) {
+      console.error("Failed to complete order:", err)
+      setError("Could not mark order as completed.")
     }
-
-    // Sort by creation time (newest first)
-    filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-
-    setFilteredOrders(filtered)
-  }, [orders, statusFilter])
-
-  const handleCompleteOrder = (orderId) => {
-    updateOrderStatus(orderId, "completed")
   }
 
   return (
     <div className="manager-dashboard">
       <h2>Manager Dashboard</h2>
+      {error && <div className="error">{error}</div>}
 
-      <div className="filter-controls">
-        <label htmlFor="status-filter">Filter by status:</label>
-        <select id="status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="all">All Orders</option>
-          <option value="pending">Pending</option>
-          <option value="ready">Ready</option>
-          <option value="served">Served</option>
-          <option value="completed">Completed</option>
-        </select>
-      </div>
-
-      {filteredOrders.length === 0 ? (
-        <div className="no-orders">
-          <p>No orders found</p>
-        </div>
+      {orders.length === 0 ? (
+        <p>No orders available</p>
       ) : (
         <div className="orders-grid">
-          {filteredOrders.map((order) => (
+          {orders.map(order => (
             <OrderCard
               key={order.id}
               order={order}
-              actionLabel={order.status !== "completed" ? "Mark as Completed" : null}
-              onAction={order.status !== "completed" ? () => handleCompleteOrder(order.id) : null}
-              showTable={true}
+              // Only show complete button for served orders
+              actionLabel={order.status === "served" ? "Mark as Completed" : null}
+              onAction={order.status === "served" ? () => handleComplete(order.id) : null}
               showStatus={true}
               showAllTimes={true}
+              showComments={true}
             />
           ))}
         </div>
@@ -65,5 +59,3 @@ const ManagerDashboard = () => {
     </div>
   )
 }
-
-export default ManagerDashboard

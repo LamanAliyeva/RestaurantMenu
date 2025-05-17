@@ -1,13 +1,13 @@
-
 import { useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 import KitchenDashboard from "../components/KitchenDashboard"
 import WaiterDashboard from "../components/WaiterDashboard"
 import ManagerDashboard from "../components/ManagerDashboard"
+import AdminDashboard from "../components/AdminDashboard"
 import "../styles/AdminDashboard.css"
 
-const AdminDashboard = () => {
+const AdminsDashboard = () => {
   const { role } = useParams()
   const { currentUser, logout } = useAuth()
   const navigate = useNavigate()
@@ -24,7 +24,7 @@ const AdminDashboard = () => {
 
   // Validate role
   useEffect(() => {
-    const validRoles = ["kitchen", "waiter", "manager"]
+    const validRoles = ["chef", "waiter", "admin", "manager"]
     if (!validRoles.includes(role)) {
       navigate("/admin/login")
     }
@@ -32,11 +32,7 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     logout()
-    navigate("/admin/login")
-  }
-
-  const handleRoleChange = (newRole) => {
-    navigate(`/admin/${newRole}`)
+    navigate("/logout")
   }
 
   if (!currentUser) return null
@@ -47,10 +43,6 @@ const AdminDashboard = () => {
         <h1>Restaurant Admin</h1>
 
         <div className="user-controls">
-          <div className="role-selector">
-
-          </div>
-
           <div className="user-info">
             <span>Logged in as: {currentUser.username}</span>
             <button onClick={handleLogout} className="logout-button">
@@ -61,12 +53,13 @@ const AdminDashboard = () => {
       </header>
 
       <main className="dashboard-content">
-        {role === "kitchen" && <KitchenDashboard />}
+        {role === "chef" && <KitchenDashboard />}
         {role === "waiter" && <WaiterDashboard />}
         {role === "manager" && <ManagerDashboard />}
+        {role === "admin" && <AdminDashboard />}
       </main>
     </div>
   )
 }
 
-export default AdminDashboard
+export default AdminsDashboard
