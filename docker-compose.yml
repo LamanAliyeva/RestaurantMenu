@@ -16,6 +16,18 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
 
+  redis:
+    image: redis:7
+    container_name: restaurant-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  adminer:
+      image: adminer
+      restart: always
+      ports:
+      - "8081:8080"
 
 volumes:
   mysql-data:
