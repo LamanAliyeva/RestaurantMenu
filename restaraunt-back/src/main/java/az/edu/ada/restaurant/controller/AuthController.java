@@ -7,6 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,11 +43,17 @@ public class AuthController {
         String username = body.get("username");
         String password = body.get("password");
 
-        // Lookup the AuthenticationManager on demand
         AuthenticationManager authManager = authConfig.getAuthenticationManager();
-        authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
+        try {
+            authManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password)
+            );
+        } catch (AuthenticationException ex) {
+            // invalid credentials → 401 Unauthorized
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid username or password"));
+        }
 
         User u = users.findByUsername(username).get();
         String token = jwtUtil.generateToken(username);
