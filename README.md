@@ -3,7 +3,7 @@
 ## For Backend Setup:
 ### Running the app:
 - cd restaurant-back
-- .gradlew bootRun
+- ./gradlew bootRun
 
 ### Running backend tests:
 - ./gradlew clean test
